@@ -74,7 +74,15 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
-
+        for i in range(self.lookback, len(self.price)):
+            window_returns = self.returns[assets].iloc[i - self.lookback:i]
+            volatilities = window_returns.std()
+            
+            # Calculate the inverse volatility weights
+            inv_vol_weights = 1 / volatilities
+            norm_inv_vol_weights = inv_vol_weights / inv_vol_weights.sum()
+            
+            self.portfolio_weights.loc[self.price.index[i], assets] = norm_inv_vol_weights
         """
         TODO: Complete Task 4 Above
         """

@@ -66,6 +66,12 @@ class EqualWeightPortfolio:
         """
         TODO: Complete Task 1 Below
         """
+        equal_weight = 1 / len(assets)
+
+        self.portfolio_weights[assets] = equal_weight
+
+        self.portfolio_weights.ffill(inplace=True)
+        self.portfolio_weights.fillna(0, inplace=True)
 
         """
         TODO: Complete Task 1 Above
@@ -117,7 +123,15 @@ class RiskParityPortfolio:
         """
         TODO: Complete Task 2 Below
         """
-
+        for i in range(self.lookback, len(df)):
+            window_returns = df_returns[assets].iloc[i - self.lookback:i]
+            volatilities = window_returns.std()
+            
+            # Calculate the inverse volatility weights
+            inv_vol_weights = 1 / volatilities
+            norm_inv_vol_weights = inv_vol_weights / inv_vol_weights.sum()
+            
+            self.portfolio_weights.loc[df.index[i], assets] = norm_inv_vol_weights
         """
         TODO: Complete Task 2 Above
         """
@@ -145,7 +159,6 @@ class RiskParityPortfolio:
             self.calculate_portfolio_returns()
 
         return self.portfolio_weights, self.portfolio_returns
-
 
 """
 Problem 3:
@@ -186,18 +199,38 @@ class MeanVariancePortfolio:
             env.setParam("DualReductions", 0)
             env.start()
             with gp.Model(env=env, name="portfolio") as model:
-                """
-                TODO: Complete Task 3 Below
-                """
+                w = model.addMVar(n, name="w", ub=1)
+                portfolio_return = mu @ w
+                portfolio_risk = w @ Sigma @ w
+                model.setObjective(portfolio_return - (gamma / 2) * portfolio_risk, gp.GRB.MAXIMIZE)
+
+                model.addConstr(w.sum() == 1, name="budget")
+                model.addConstr(w >= 0, name="long_only")
+
+                model.optimize()
+
+                if model.status == gp.GRB.OPTIMAL or model.status == gp.GRB.SUBOPTIMAL:
+                    solution = []
+                    for i in range(n):
+                        var = model.getVarByName(f"w[{i}]")
+                        solution.append(var.X)
+                    return solution
+                else:
+                    return [0] * n
+            """
+            with gp.Model(env=env, name="portfolio") as model:
+                
+                #TODO: Complete Task 3 Below
+                
 
                 # Sample Code: Initialize Decision w and the Objective
                 # NOTE: You can modify the following code
                 w = model.addMVar(n, name="w", ub=1)
                 model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
 
-                """
-                TODO: Complete Task 3 Below
-                """
+                
+                #TODO: Complete Task 3 Below
+                
                 model.optimize()
 
                 # Check if the status is INF_OR_UNBD (code 4)
@@ -221,7 +254,7 @@ class MeanVariancePortfolio:
                         solution.append(var.X)
 
         return solution
-
+            """    
     def calculate_portfolio_returns(self):
         # Ensure weights are calculated
         if not hasattr(self, "portfolio_weights"):
