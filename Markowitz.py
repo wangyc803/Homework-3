@@ -123,15 +123,18 @@ class RiskParityPortfolio:
         """
         TODO: Complete Task 2 Below
         """
-        for i in range(self.lookback, len(df)):
-            window_returns = df_returns[assets].iloc[i - self.lookback:i]
-            volatilities = window_returns.std()
+        for i in range(self.lookback+1, len(df)):
+            # Calculate rolling standard deviation
+            rolling_vol = df_returns[assets].iloc[i - self.lookback:i].std()
             
-            # Calculate the inverse volatility weights
-            inv_vol_weights = 1 / volatilities
-            norm_inv_vol_weights = inv_vol_weights / inv_vol_weights.sum()
+            # Calculate inverse volatility
+            inv_vol = 1 / rolling_vol
             
-            self.portfolio_weights.loc[df.index[i], assets] = norm_inv_vol_weights
+            # Normalize to sum to 1
+            weights = inv_vol / inv_vol.sum()
+            
+            # Assign weights
+            self.portfolio_weights.loc[df.index[i], assets] = weights
         """
         TODO: Complete Task 2 Above
         """
